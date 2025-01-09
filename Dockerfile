@@ -10,9 +10,9 @@ USER root
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH ${NB_PYTHON_PREFIX}/bin:$PATH
 
-# # For local testing
-# ARG AWS_ACCESS_KEY_ID
-# ARG AWS_SECRET_ACCESS_KEY
+# For local testing
+ARG AWS_ACCESS_KEY_ID
+ARG AWS_SECRET_ACCESS_KEY
 
 # Needed for apt-key to work
 RUN apt-get update -qq --yes > /dev/null && \
@@ -48,7 +48,7 @@ RUN wget -q "https://sourceforge.net/projects/turbovnc/files/${TURBOVNC_VERSION}
  && ln -s /opt/TurboVNC/bin/* /usr/local/bin/ \
  && rm -rf /var/lib/apt/lists/*
 
-RUN mamba install -n ${CONDA_ENV} -y websockify ipywidgets-bokeh
+RUN mamba install -n ${CONDA_ENV} -y websockify ipywidgets-bokeh plotly
 
 # Install jupyter-remote-desktop-proxy with compatible npm version
 RUN export PATH=${NB_PYTHON_PREFIX}/bin:${PATH} \
@@ -76,15 +76,23 @@ COPY images/CIROHLogo_200x200.png /opt/hefs_fews_dashboard/CIROHLogo_200x200.png
 
 COPY scripts/dashboard.desktop /opt/hefs_fews_dashboard/dashboard.desktop
 
+COPY playground/panel_dash.ipynb panel_dash_TEST.ipynb
+COPY playground/dashboard_funcs.py dashboard_funcs.py
+RUN chown jovyan:jovyan panel_dash_TEST.ipynb
+RUN chown jovyan:jovyan dashboard_funcs.py
+
+# COPY jupyter-panel-proxy.yml .
+# RUN chown jovyan:jovyan jupyter-panel-proxy.yml
+
 RUN chown -R jovyan:jovyan /opt/hefs_fews_dashboard && chmod +x /opt/hefs_fews_dashboard/start_dashboard.sh \
  && chmod +x /opt/hefs_fews_dashboard/dashboard.desktop
 
-# Install Firefox
-RUN wget -P Downloads https://ftp.mozilla.org/pub/firefox/releases/131.0b9/linux-x86_64/en-US/firefox-131.0b9.tar.bz2 \
- && tar xjf Downloads/firefox-*.tar.bz2 \
- && mv firefox /opt \
- && ln -s /opt/firefox/firefox /usr/local/bin/firefox \
- && rm -r .cache
+# # Install Firefox
+# RUN wget -P Downloads https://ftp.mozilla.org/pub/firefox/releases/131.0b9/linux-x86_64/en-US/firefox-131.0b9.tar.bz2 \
+#  && tar xjf Downloads/firefox-*.tar.bz2 \
+#  && mv firefox /opt \
+#  && ln -s /opt/firefox/firefox /usr/local/bin/firefox \
+#  && rm -r .cache
 
 # # For firefox??
 # RUN install -d -m 0755 /etc/apt/keyrings \
@@ -102,9 +110,9 @@ RUN wget -P Downloads https://ftp.mozilla.org/pub/firefox/releases/131.0b9/linux
 
 USER ${NB_USER}
 
-# # For local testing
-# RUN aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID \
-#  && aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY \
-#  && aws configure set default.region us-east-2
+# For local testing
+RUN aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID \
+ && aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY \
+ && aws configure set default.region us-east-2
 
 WORKDIR /home/jovyan
